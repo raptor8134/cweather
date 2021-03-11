@@ -1,0 +1,1 @@
+	To use this program, you need an api key from https://openweathermap.org. You can compile it in as the API_KEY macro or put it as the first command line argument.  Installing with `make && sudo make install` should work in most cases. The default install location is /usr/bin/cweather, you can edit it in the makefile.
