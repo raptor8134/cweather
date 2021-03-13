@@ -11,7 +11,7 @@
  *	Sample module: 
  *	[module/weather]
  *	type = custom/script
- *	exec = cweather | head -c 30 # Just incase curl fails, cutoff the long error message
+ *	exec = cweather 2>/dev/null # Just incase curl fails, cutoff the long error message
  *	tail = true
  *	inteval = 60
  *	click-left = $your-browser-here https://weather.com/weather/tenday/$(cweather --location)?par=google&temp=f # Replace the 'f' with 'c' if you want metric units
