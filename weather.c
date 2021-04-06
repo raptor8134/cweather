@@ -109,7 +109,7 @@ int main(int argc, char **argv) {
 	char *city = printj(getjson(location_json, "city"));
 	
 	// command line arguments
-	if (argc < 1) {
+	if (argc < 2) {
 		printf("Error: Missing API key\n");
 		return 1;
 	} else if (argc > n) {
