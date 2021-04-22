@@ -6,7 +6,8 @@
  *	Licensed under the GPLv3
  *
  *	Dependencies are cjson and curl, both available on most distros' package managers; try `make test` to check if they are installed.
- * 	Pass the `--location` option if you want to get the gps coordinates of your location, convinient for opening a weather.com forecast from a script, like in a polybar module.
+ * 	Pass the --location or -l option if you want to get the coordinates of your location, convinient for opening a weather.com forecast from a script, like in a polybar module.
+ * 	Credit to the curl team for the example code I used (from here: https://curl.se/libcurl/c/getinmemory.html)
  *
  *	Sample module: 
  *	[module/weather]
@@ -17,25 +18,49 @@
  *	click-left = $your-browser-here https://weather.com/weather/tenday/$(cweather --location)?par=google&temp=f # Replace the 'f' with 'c' if you want metric units
  */	
 
+/* TODO TODO TODO
+ * Add nerdfont icons for different weather
+ * 	- https://www.nerdfonts.com/cheat-sheet	
+ * 	- https://openweathermap.org/weather-conditions
+ * 	- ["weather"][0]["icon"] //json object location
+ * Add a script in the PKGBUILD to compile in an api key
+ * Flex on Gavin with cool new program
+ * TODO TODO TODO 
+ */
+
 #include <stdio.h>				//
 #include <stdlib.h>				//
 #include <string.h>				//
 #include <curl/curl.h>			// To download stuff
 #include <cjson/cJSON.h>		// For json parsing
 #include <cjson/cJSON_Utils.h>	// ^^
-#include <math.h>				// To get the round() function
+#include <getopt.h>				// Get command line options
 
 #define getjson cJSON_GetObjectItemCaseSensitive
 #define printj cJSON_Print 
 
-//#define API_KEY "" // Paste your api key between the quotes 
+//#define API_KEY "" // Uncomment and paste your api key between the quotes 
 
-#ifndef API_KEY
-	int n = 2;
-	char* API_KEY;
+
+#ifdef API_KEY
+	static int key_flag = 1;
 #else
-	int n = 1;
+	char* API_KEY;
+	static int key_flag = 0;
 #endif
+
+static int help_flag, centigrade_flag, location_flag;
+
+void help(char* name) {
+printf("\
+usage: %s [options]\n\
+  options:\n\
+    -h | --help		display this help message\n\
+    -k | --key <apikey>	define api key (not necessary if compiled in)\n\
+    -c | --celsius	changes the temperature scale to celcius\n\
+    -l | --location	print latitude and longitude seperated by a comma\n\
+", name);
+}
 
 // Gets the quotes off the json output 
 char *dequote(char *input) {
@@ -45,31 +70,72 @@ char *dequote(char *input) {
 	return p;
 }
 
+// Get command-line options with getopt
+void getoptions(int argc, char** argv) {
+	int c;
+	for (;;) {
+		static struct option long_options[] = //TODO add `static int help_flag centigrade_flag location_flag` at the top
+		{
+			{"help"			, no_argument,		 0, 'h'},
+			{"celcius"		, no_argument,		 0, 'c'},
+			{"location"		, no_argument,		 0, 'l'},
+			{"key"			, required_argument, 0, 'k'},
+		};
+
+		int option_index = 0;
+		c = getopt_long(argc, argv, "hclk:", long_options, &option_index);
+
+		if (c == -1) { break; }
+
+		switch(c) {
+			case 0:		// do nothing
+				break;
+			case 'h':
+				help_flag = 1;
+				break;
+			case 'c':
+				centigrade_flag = 1;
+				break;
+			case 'l':
+				location_flag = 1;
+				break;
+			case 'k':
+				#ifndef API_KEY
+					API_KEY = optarg;
+					key_flag = 1;
+				#endif
+				break;
+			default:
+				abort();
+		}
+	}
+}
+
 // Functions from https://curl.se/libcurl/c/getinmemory.html
 struct MemoryStruct {
-  char *memory;
-  size_t size;
+	char *memory;
+	size_t size;
 };
  
 static size_t
 WriteMemoryCallback(void *contents, size_t size, size_t nmemb, void *userp)
 {
-  size_t realsize = size * nmemb;
-  struct MemoryStruct *mem = (struct MemoryStruct *)userp;
+	size_t realsize = size * nmemb;
+	struct MemoryStruct *mem = (struct MemoryStruct *)userp;
+	 
+	char *ptr = realloc(mem->memory, mem->size + realsize + 1);
+	if(ptr == NULL) {
+   		// out of memory!
+		printf("not enough memory (realloc returned NULL)\n");
+		return 0;
+	}
  
-  char *ptr = realloc(mem->memory, mem->size + realsize + 1);
-  if(ptr == NULL) {
-    // out of memory!
-    printf("not enough memory (realloc returned NULL)\n");
-    return 0;
-  }
+	mem->memory = ptr;
+	memcpy(&(mem->memory[mem->size]), contents, realsize);
+	mem->size += realsize;
+	mem->memory[mem->size] = 0;
  
-  mem->memory = ptr;
-  memcpy(&(mem->memory[mem->size]), contents, realsize);
-  mem->size += realsize;
-  mem->memory[mem->size] = 0;
- 
-  return realsize;
+	return realsize;
 }
 
 char *curl(char *url) {
@@ -78,6 +144,7 @@ char *curl(char *url) {
 	CURLcode res;
 
 	struct MemoryStruct chunk;
+	chunk.memory = malloc(1);
 	chunk.size = 0;
 
 	curl_handle = curl_easy_init(); // initiate the curl session
@@ -107,40 +174,57 @@ int main(int argc, char **argv) {
 	char *location_api_url = "http://ip-api.com/json/"; 
 	cJSON *location_json = cJSON_Parse(curl(location_api_url));
 	char *city = printj(getjson(location_json, "city"));
+
+	getoptions(argc, argv);
 	
-	// command line arguments
-	if (argc < 2) {
-		printf("Error: Missing API key\n");
+	if (location_flag == 1) {
+		float lat, lon;
+			lat = atof(printj(getjson(location_json, "lat")));
+			lon = atof(printj(getjson(location_json, "lon")));
+		printf("%.2f,%.2f", lat, lon);
+		curl_global_cleanup(); // Stops and cleans up the global curl instance 
+		return 0;
+	}
+
+	if (key_flag != 1) {
+		printf("Error: missing api key\n");
 		return 1;
-	} else if (argc > n) {
-		if (strncmp(argv[n], "--location", 5) == 0) {
-			float lat = atof(printj(getjson(location_json, "lat")));
-			float lon = atof(printj(getjson(location_json, "lon")));
-			printf("%.2f,%.2f", lat, lon);
-			curl_global_cleanup(); // Stops and cleans up the global curl instance 
-			return 0;
-		} else {
-			printf("Error: unrecognized option '%s'\n", argv[n]);
-			return 1;
-		}
-	} 
-	if (n == 2) { API_KEY = argv[1]; }
+	}
+
+	char * units = "imperial", degreechar = 'F';
+	if (centigrade_flag == 1) {
+		units = "metric";
+		degreechar = 'C';
+	}
+
+	if (help_flag == 1) {
+		help(argv[0]);
+		return 0;
+	}
 
 	// Get json from openweathermap.org
 	char weather_api_url[256];
-	snprintf(weather_api_url, 256, "https://api.openweathermap.org/data/2.5/weather?q=%s&units=imperial&appid=%s", dequote(city), API_KEY); 
+	//TODO figure out how to change this to celcius
+	sprintf(weather_api_url, "https://api.openweathermap.org/data/2.5/weather?q=%s&units=%s&appid=%s", dequote(city), units, API_KEY); 
 	cJSON* weather_json	 = cJSON_Parse(curl(weather_api_url));
 
 	// Stops and cleans up the global curl instance
 	curl_global_cleanup();  
  
 	// Get the weather data out of the json and put it in some variables
-	char *weather, *sky;
-	int temperature, sunrise, sunset;
+	char *weather, *sky, *icon_id;
+	float temperature;
+	int sunrise, sunset;
 	weather = dequote(printj(getjson(cJSON_GetArrayItem(getjson(weather_json, "weather"), 0), "main")));
-	temperature = round(atof(printj(getjson(getjson(weather_json, "main"), "temp"))));	
+	temperature = atof(printj(getjson(getjson(weather_json, "main"), "temp")));	
+	icon_id = dequote(printj(getjson(cJSON_GetArrayItem(getjson(weather_json, "weather"), 0), "icon")));
 	sunrise = atoi(printj(getjson(getjson(weather_json, "sys"), "sunrise")));
 	sunset  = atoi(printj(getjson(getjson(weather_json, "sys"), "sunset")));
+
+	// convert the icon code from the json to a nerdfont icon
+	char *night, *icons[50];
+
+	// Replace this with the icon, maybe keep to support non-nerdfont systems?
 	int now = time(NULL);	
 	if (sunrise < now <= sunset){
 		sky = "☀";
@@ -149,8 +233,8 @@ int main(int argc, char **argv) {
 		sky = "☽";
 	}
 
-	// Output, can be customized
-	printf("%s %i°F %s\n", weather, temperature, sky);
+	// Output
+	printf("%s %.0f°%c %s\n", weather, temperature, degreechar, sky);
 
 	// Cleanup cJSON pointers
 	cJSON_Delete(weather_json);
