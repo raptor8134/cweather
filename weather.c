@@ -19,10 +19,6 @@
  */	
 
 /* TODO TODO TODO
- * Add nerdfont icons for different weather
- * 	- https://www.nerdfonts.com/cheat-sheet	
- * 	- https://openweathermap.org/weather-conditions
- * 	- ["weather"][0]["icon"] //json object location
  * Add a script in the PKGBUILD to compile in an api key
  * Flex on Gavin with cool new program
  * TODO TODO TODO 
@@ -49,16 +45,15 @@
 	static int key_flag = 0;
 #endif
 
-static int help_flag, centigrade_flag, location_flag;
-
 void help(char* name) {
 printf("\
 usage: %s [options]\n\
   options:\n\
-    -h | --help		display this help message\n\
-    -k | --key <apikey>	define api key (not necessary if compiled in)\n\
-    -c | --celsius	changes the temperature scale to celcius\n\
-    -l | --location	print latitude and longitude seperated by a comma\n\
+    -h | --help		Display this help message\n\
+    -k | --key <apikey>	Define api key (not necessary if compiled in)\n\
+    -c | --celsius	Changes the temperature scale to celcius\n\
+    -l | --location	Print latitude and longitude seperated by a comma\n\
+    -s | --simple	Only use day/night icons instead of the full set\n\
 ", name);
 }
 
@@ -71,6 +66,7 @@ char *dequote(char *input) {
 }
 
 // Get command-line options with getopt
+static int help_flag, centigrade_flag, location_flag, icon_flag;
 void getoptions(int argc, char** argv) {
 	int c;
 	for (;;) {
@@ -79,11 +75,12 @@ void getoptions(int argc, char** argv) {
 			{"help"			, no_argument,		 0, 'h'},
 			{"celcius"		, no_argument,		 0, 'c'},
 			{"location"		, no_argument,		 0, 'l'},
+			{"simple"		, no_argument,		 0, 's'},
 			{"key"			, required_argument, 0, 'k'},
 		};
 
 		int option_index = 0;
-		c = getopt_long(argc, argv, "hclk:", long_options, &option_index);
+		c = getopt_long(argc, argv, "hclsk:", long_options, &option_index);
 
 		if (c == -1) { break; }
 
@@ -98,6 +95,9 @@ void getoptions(int argc, char** argv) {
 				break;
 			case 'l':
 				location_flag = 1;
+				break;
+			case 's':
+				icon_flag = 1;
 				break;
 			case 'k':
 				#ifndef API_KEY
@@ -220,21 +220,51 @@ int main(int argc, char **argv) {
 	icon_id = dequote(printj(getjson(cJSON_GetArrayItem(getjson(weather_json, "weather"), 0), "icon")));
 	sunrise = atoi(printj(getjson(getjson(weather_json, "sys"), "sunrise")));
 	sunset  = atoi(printj(getjson(getjson(weather_json, "sys"), "sunset")));
+	//sprintf(icon);
 
 	// convert the icon code from the json to a nerdfont icon
 	char *night, *icons[50];
 
-	// Replace this with the icon, maybe keep to support non-nerdfont systems?
-	int now = time(NULL);	
-	if (sunrise < now <= sunset){
-		sky = "☀";
-	}
-	else {
-		sky = "☽";
+	// Icon
+	char *icon;
+	if (icon_flag == 1) {
+		if (icon_id[2] == 'd'){
+			icon = "☀";
+		}
+		else {
+			icon = "☽";
+		}
+	} else {
+		char icon_array[50];
+		if (icon_id[2] == 'd') {
+			icons[1] = "滛";
+			icons[2] = "";
+			icons[3] = "";
+			icons[4] = "";
+			icons[9] = "";
+			icons[10] = "";
+			icons[11] = "";
+			icons[13] = "";
+			icons[50] = "";
+		} else {
+			icons[1] = "望";
+			icons[2] = "";
+			icons[3] = "";
+			icons[4] = "";
+			icons[9] = "";
+			icons[10] = "";
+			icons[11] = "";
+			icons[13] = "";
+			icons[50] = "";
+		}
+		// Hacky BS 
+		char icon_id_but_better[2];
+		sprintf(icon_id_but_better, "%c%c", icon_id[0], icon_id[1]);
+		icon = icons[atoi(icon_id_but_better)];
 	}
 
 	// Output
-	printf("%s %.0f°%c %s\n", weather, temperature, degreechar, sky);
+	printf("%s %.0f°%c %s\n", weather, temperature, degreechar, icon);
 
 	// Cleanup cJSON pointers
 	cJSON_Delete(weather_json);
