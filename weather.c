@@ -20,7 +20,6 @@
 
 /* TODO TODO TODO
  * Add a script in the PKGBUILD to compile in an api key
- * Flex on Gavin with cool new program
  * TODO TODO TODO 
  */
 
@@ -36,7 +35,6 @@
 #define printj cJSON_Print 
 
 //#define API_KEY "" // Uncomment and paste your api key between the quotes 
-
 
 #ifdef API_KEY
 	static int key_flag = 1;
