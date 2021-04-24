@@ -10,6 +10,6 @@ test:
 clean: 
 	@rm cweather
 install:
-	install ./cweather /usr/bin/cweather
+	@install ./cweather /usr/bin/cweather
 uninstall:
-	rm /usr/bin/cweather
+	@rm /usr/bin/cweather

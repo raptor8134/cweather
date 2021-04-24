@@ -23,6 +23,8 @@
  * TODO TODO TODO 
  */
 
+#define KEY "" // Uncomment and paste your api key between the quotes 
+
 #include <stdio.h>				//
 #include <stdlib.h>				//
 #include <string.h>				//
@@ -34,9 +36,8 @@
 #define getjson cJSON_GetObjectItemCaseSensitive
 #define printj cJSON_Print 
 
-//#define API_KEY "" // Uncomment and paste your api key between the quotes 
-
-#ifdef API_KEY
+#ifdef KEY
+	#define API_KEY KEY
 	static int key_flag = 1;
 #else
 	char* API_KEY;
