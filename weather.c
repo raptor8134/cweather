@@ -23,7 +23,7 @@
  * TODO TODO TODO 
  */
 
-#define KEY "" // Uncomment and paste your api key between the quotes 
+//#define API_KEY "" // Uncomment and paste your api key between the quotes 
 
 #include <stdio.h>				//
 #include <stdlib.h>				//
@@ -35,9 +35,9 @@
 
 #define getjson cJSON_GetObjectItemCaseSensitive
 #define printj cJSON_Print 
+#define ISEMPTY(VAL) VAL ## 1
 
-#ifdef KEY
-	#define API_KEY KEY
+#ifdef API_KEY
 	static int key_flag = 1;
 #else
 	char* API_KEY;
@@ -210,16 +210,14 @@ int main(int argc, char **argv) {
 	// Stops and cleans up the global curl instance
 	curl_global_cleanup();  
  
-	// Get the weather data out of the json and put it in some variables
+	// Declare some variables
 	char *weather, *sky, *icon_id;
 	float temperature;
-	int sunrise, sunset;
+
+	// Get the weather data out of the json and put it in some variables
 	weather = dequote(printj(getjson(cJSON_GetArrayItem(getjson(weather_json, "weather"), 0), "main")));
 	temperature = atof(printj(getjson(getjson(weather_json, "main"), "temp")));	
 	icon_id = dequote(printj(getjson(cJSON_GetArrayItem(getjson(weather_json, "weather"), 0), "icon")));
-	sunrise = atoi(printj(getjson(getjson(weather_json, "sys"), "sunrise")));
-	sunset  = atoi(printj(getjson(getjson(weather_json, "sys"), "sunset")));
-	//sprintf(icon);
 
 	// convert the icon code from the json to a nerdfont icon
 	char *night, *icons[50];
@@ -263,7 +261,7 @@ int main(int argc, char **argv) {
 	}
 
 	// Output
-	printf("%s %.0f°%s %s\n", weather, temperature, degreechar, icon);
+	printf("%s %.0f°%c %s\n", weather, temperature, degreechar, icon);
 
 	// Cleanup cJSON pointers
 	cJSON_Delete(weather_json);
