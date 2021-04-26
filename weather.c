@@ -263,7 +263,7 @@ int main(int argc, char **argv) {
 	}
 
 	// Output
-	printf("%s %.0f°%c %s\n", weather, temperature, degreechar, icon);
+	printf("%s %.0f°%s %s\n", weather, temperature, degreechar, icon);
 
 	// Cleanup cJSON pointers
 	cJSON_Delete(weather_json);
