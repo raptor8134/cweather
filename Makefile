@@ -1,3 +1,4 @@
+NAME=cweather
 CC=gcc
 CFLAGS=-Wall -Wpedantic.
 DEPS = stdio.h stdlib.h string.h curl/curl.h cjson/cJSON.h cjson/cJSON_Utils.h getopt.h
