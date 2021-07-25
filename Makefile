@@ -13,6 +13,6 @@ test:
 clean: 
 	@rm $(NAME) 
 install:
-	@install ./cweather $(DESTDIR)/$(PREFIX)/$(NAME)
+	@install ./cweather $(DESTDIR)/$(PREFIX)/bin/$(NAME)
 uninstall:
 	@rm $(DESTDIR)/$(PREFIX)/bin/$(NAME)
