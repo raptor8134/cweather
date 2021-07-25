@@ -58,10 +58,31 @@ usage: %s [options]\n\
 
 // Gets the quotes off the json output 
 char *dequote(char *input) {
-	char *p = input;
+	char *p = malloc(strlen(input));
+	strcpy(p, input);
 	p++;
-	p[strlen(p)-1] = 0;
+	p[(int)strlen(p)-1] = 0;
 	return p;
+}
+
+// Escapes spaces in tricky city names (shoutout to Saint Augustine for 'finding' this bug)
+char *spacereplace(char *input) {
+	char* output = (char*)malloc(strlen(input)*2);
+	int J, length = strlen(input);
+	for (int i = 0, j = 0; i<length; i++, j++) {
+		if (input[i] == ' ') {
+			output[j] = '%';
+			j+=1;
+			output[j] = '2';
+			j+=1;
+			output[j] = '0';
+		} else {
+			output[j] = input[i];
+		}
+		J=j;
+	}
+	output[J+1] = '\0';
+	return output;
 }
 
 // Get command-line options with getopt
@@ -203,8 +224,8 @@ int main(int argc, char **argv) {
 
 	// Get json from openweathermap.org
 	char weather_api_url[256];
-	//TODO figure out how to change this to celcius
-	sprintf(weather_api_url, "https://api.openweathermap.org/data/2.5/weather?q=%s&units=%s&appid=%s", dequote(city), units, API_KEY); 
+	city = dequote(spacereplace(city));
+	sprintf(weather_api_url, "https://api.openweathermap.org/data/2.5/weather?q=%s&units=%s&appid=%s", city, units, API_KEY); 
 	cJSON* weather_json	 = cJSON_Parse(curl(weather_api_url));
 
 	// Stops and cleans up the global curl instance
@@ -254,7 +275,7 @@ int main(int argc, char **argv) {
 			icons[13] = "";
 			icons[50] = "";
 		}
-		// Hacky BS 
+		// hacky BS 
 		char icon_id_but_better[2];
 		sprintf(icon_id_but_better, "%c%c", icon_id[0], icon_id[1]);
 		icon = icons[atoi(icon_id_but_better)];

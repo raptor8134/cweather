@@ -2,7 +2,7 @@ NAME=cweather
 CC=gcc
 CFLAGS=-Wall -Wpedantic.
 DEPS = stdio.h stdlib.h string.h curl/curl.h cjson/cJSON.h cjson/cJSON_Utils.h getopt.h
-PREFIX = /usr/bin
+PREFIX = /usr
 DESTDIR=
 
 weather:
@@ -15,4 +15,4 @@ clean:
 install:
 	@install ./cweather $(DESTDIR)/$(PREFIX)/$(NAME)
 uninstall:
-	@rm $(DESTDIR)/$(PREFIX)/$(NAME)
+	@rm $(DESTDIR)/$(PREFIX)/bin/$(NAME)
