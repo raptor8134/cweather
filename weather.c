@@ -226,7 +226,6 @@ int main(int argc, char **argv) {
 	char weather_api_url[1024];
 	city = spacereplace(dequote(city));
 	sprintf(weather_api_url, "https://api.openweathermap.org/data/2.5/weather?q=%s&units=%s&appid=%s", city, units, API_KEY); 
-	printf("%s\n", weather_api_url);
 	cJSON* weather_json	 = cJSON_Parse(curl(weather_api_url));
 
 	// Stops and cleans up the global curl instance
@@ -238,7 +237,6 @@ int main(int argc, char **argv) {
 
 	// Get the weather data out of the json and put it in some variables
 	weather = dequote(printj(getjson(cJSON_GetArrayItem(getjson(weather_json, "weather"), 0), "main")));
-	printf("working\n");
 	temperature = atof(printj(getjson(getjson(weather_json, "main"), "temp")));	
 	icon_id = dequote(printj(getjson(cJSON_GetArrayItem(getjson(weather_json, "weather"), 0), "icon")));
 
