@@ -58,10 +58,10 @@ usage: %s [options]\n\
 
 // Gets the quotes off the json output 
 char *dequote(char *input) {
-	char *p = malloc(strlen(input));
+	char *p = (char*)malloc(strlen(input)+1);
 	strcpy(p, input);
 	p++;
-	p[(int)strlen(p)-1] = 0;
+	p[(int)strlen(p)-1] = '\0';
 	return p;
 }
 
@@ -206,6 +206,11 @@ int main(int argc, char **argv) {
 		return 0;
 	}
 
+	if (help_flag == 1) {
+		help(argv[0]);
+		return 0;
+	}
+
 	if (key_flag != 1) {
 		printf("Error: missing api key\n");
 		return 1;
@@ -217,15 +222,11 @@ int main(int argc, char **argv) {
 		degreechar = 'C';
 	}
 
-	if (help_flag == 1) {
-		help(argv[0]);
-		return 0;
-	}
-
 	// Get json from openweathermap.org
-	char weather_api_url[256];
-	city = dequote(spacereplace(city));
+	char weather_api_url[1024];
+	city = spacereplace(dequote(city));
 	sprintf(weather_api_url, "https://api.openweathermap.org/data/2.5/weather?q=%s&units=%s&appid=%s", city, units, API_KEY); 
+	printf("%s\n", weather_api_url);
 	cJSON* weather_json	 = cJSON_Parse(curl(weather_api_url));
 
 	// Stops and cleans up the global curl instance
@@ -237,6 +238,7 @@ int main(int argc, char **argv) {
 
 	// Get the weather data out of the json and put it in some variables
 	weather = dequote(printj(getjson(cJSON_GetArrayItem(getjson(weather_json, "weather"), 0), "main")));
+	printf("working\n");
 	temperature = atof(printj(getjson(getjson(weather_json, "main"), "temp")));	
 	icon_id = dequote(printj(getjson(cJSON_GetArrayItem(getjson(weather_json, "weather"), 0), "icon")));
 
