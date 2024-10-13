@@ -76,11 +76,13 @@ char *dequote(char *input) {
 // Escapes spaces in tricky city names (shoutout to St. Augustine for 'finding' this bug)
 // May also need to escape other characters but I haven't encountered them yet
 char *spacereplace(char *input) {
-    int outlen, inlen = strlen(input);
-    char* output = (char*)malloc(inlen+1);
+    int inlen  = strlen(input);
+    int outlen = inlen + 1;
+    char* output = (char*)malloc(outlen);
     for (int i = 0, j = 0; i<inlen; i++, j++) {
         if (input[i] == ' ') {
-            realloc(output, j+2);
+            outlen+=2;
+            realloc(output, outlen);
             output[j] = '%';
             j+=1;
             output[j] = '2';
@@ -89,7 +91,6 @@ char *spacereplace(char *input) {
         } else {
             output[j] = input[i];
         }
-        outlen=j;
     }
     output[outlen+1] = '\0';
     return output;
@@ -199,24 +200,30 @@ char *curl(char *url) {
     // Now to see if we screwed up or not
     if (res != CURLE_OK) {
         fprintf(stderr, "curl_easy_perform() failed: %s\n", curl_easy_strerror(res));
+        return NULL;
     }
     else {
+        curl_easy_cleanup(curl_handle);
         return chunk.memory;
     }
         
-    curl_easy_cleanup(curl_handle);
-    free(chunk.memory);
+    //free(chunk.memory);
 }
 
 int main(int argc, char **argv) { 
+    getoptions(argc, argv);
     curl_global_init(CURL_GLOBAL_ALL); // Initiates the global curl instance 
 
     // Get location from public api
     char *location_api_url = "http://ip-api.com/json/"; 
-    cJSON *location_json = cJSON_Parse(curl(location_api_url));
-    if (strlen(city)==0) city = spacereplace(dequote(printj(getjson(location_json, "city"))));
-
-    getoptions(argc, argv);
+    char *raw_data_location = curl(location_api_url);
+    cJSON *location_json = cJSON_Parse(raw_data_location);
+    free(raw_data_location);
+    if (strlen(city)==0) {
+        char *dequoted = dequote(printj(getjson(location_json, "city")));
+        city = spacereplace(dequoted);
+        free(dequoted);
+    }
     
     if (location_flag == 1) {
         float lat, lon;
@@ -244,7 +251,6 @@ int main(int argc, char **argv) {
     }
 
     // Get json from openweathermap.org
-    city = spacereplace(city);
     char weather_api_url[1024];
     sprintf(weather_api_url,
         "https://api.openweathermap.org/data/2.5/weather?q=%s&units=%s&appid=%s",

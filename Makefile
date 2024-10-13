@@ -6,7 +6,7 @@ PREFIX = /usr
 DESTDIR=
 
 weather:
-	@$(CC) -o $(NAME) weather.c -lcurl -lcjson -Wno-unused-result
+	@$(CC) -o $(NAME) -g weather.c -lcurl -lcjson -Wno-unused-result
 test:
 	@ for header in $(DEPS); do printf "found "; ls /usr/include/$$header; done
 	@ echo "All dependencies satisfied." 
