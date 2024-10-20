@@ -92,7 +92,7 @@ char *spacereplace(char *input) {
             output[j] = input[i];
         }
     }
-    output[outlen+1] = '\0';
+    output[outlen-1] = '\0';
     return output;
 }
 
